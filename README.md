@@ -1,3 +1,26 @@
+# MC-GPU-ASG
+
+**MC-GPU-ASG** is a personal fork of [MC-GPU v1.3](https://github.com/DIDSR/MCGPU) maintained by [call-me-yuan](https://github.com/call-me-yuan). It extends the original code with three key enhancements:
+
+- **Anti-scatter Grid (ASG) model** – Adds a 1D anti-scatter grid for CBCT simulations.
+- **CUDA 12.x compatibility** – Replaces deprecated `cudaThreadSynchronize` with `cudaDeviceSynchronize`.
+- **Ready-to-run example** – Includes energy spectrum data in the `example/` folder.
+
+## Contact
+
+- **GitHub Issues**: [https://github.com/call-me-yuan/MCGPU-ASG/issues](https://github.com/call-me-yuan/MCGPU-ASG/issues)
+- **Email**: [adam8807@126.com](mailto:adam8807@126.com)
+
+[![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](LICENSE)
+
+## How to Cite
+
+If you use this fork in your academic work, please consider citing both the original MC-GPU paper and this repository.
+
+---
+
+*The original MC-GPU v1.3 README continues below.*
+
 # Introduction
 
 The MC-GPU simulator was created, and is actively under development, at [FDA](https://www.fda.gov)/[CDRH](https://www.fda.gov/Medical-Devices)/[OSEL](https://www.fda.gov/about-fda/cdrh-offices/office-science-and-engineering-laboratories)/[DIDSR](https://www.fda.gov/about-fda/cdrh-offices/division-imaging-diagnostics-and-software-reliability). 
@@ -100,3 +123,35 @@ The text file 'hostfile' lists the IP addresses and number of computing slots (G
   - [5] F. Salvat, J. M. Fernandez-Varea and J. Sempau, PENELOPE – A code system for Monte Carlo simulation of electron and photon transport, NEA-OECD, Issy-les-Moulineaux, available at www.nea.fr/html/dbprog/peneloperef.html (2006)
   - [6] NVIDIA Corporation, NVIDIA CUDA(TM) Programming Guide, Technical Report available at www.nvidia.com/cuda (2011)
   - [7] A. Badal and J. Sempau, A package of Linux scripts for the parallelization of Monte Carlo simulations, Comput. Phys. Commun. 175 (6), p. 440-450 (2006)
+
+---
+
+## 中文说明 (Chinese Documentation)
+
+### 关于本分支
+
+本仓库是 [MC-GPU v1.3](https://github.com/DIDSR/MCGPU) 的一个个人分支（Fork），由 call-me-yuan 维护。在原始代码的基础上，做了以下三处主要改进：
+
+#### 1. 新增防散射滤线栅 (Anti-scatter Grid) 模型
+- 实现了**一维平行防散射滤线栅**的仿真功能。
+- 可用于 CBCT 成像中散射信号的抑制效果评估。
+
+#### 2. 兼容 CUDA 12.x
+- 将原代码中已被弃用的 `cudaThreadSynchronize` 替换为 `cudaDeviceSynchronize`。
+- 解决了原版代码在现代 CUDA 环境下（如 CUDA 12.x）的编译问题。
+- 已在 **Ubuntu 24.04 + CUDA 12.x** 环境下测试通过。
+
+#### 3. 提供可直接运行的示例
+- 原版代码虽然支持能谱数据，但未提供示例文件。
+- 本仓库在 `example/` 文件夹中补充了所需的能谱数据文件，用户可直接使用或参考格式。
+
+### 联系方式
+
+如有问题或建议，欢迎通过以下方式联系：
+
+- GitHub Issue: https://github.com/call-me-yuan/MCGPU-ASG/issues
+- Email: adam8807@126.com
+
+### 如何引用 (How to Cite)
+
+如果你在学术工作中使用本分支，建议同时引用原始 MC-GPU 论文以及本仓库
