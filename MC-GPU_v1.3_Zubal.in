@@ -25,7 +25,7 @@
 150                             # SIMULATED HISTORIES PER GPU THREAD
 
 #[SECTION SOURCE v.2011-07-12]
-example/90kVp.spc            # X-RAY ENERGY SPECTRUM FILE
+example/90kv.spc            # X-RAY ENERGY SPECTRUM FILE
 25.6 -37.0  65.0                # SOURCE POSITION: X Y Z [cm]
  0.0   1.0   0.0                # SOURCE DIRECTION COSINES: U V W
 -15.0 -15.0                     # POLAR AND AZIMUTHAL APERTURES FOR THE FAN BEAM [degrees] (input negative to cover the whole detector)
