@@ -25,7 +25,7 @@
 150                             # SIMULATED HISTORIES PER GPU THREAD
 
 #[SECTION SOURCE v.2011-07-12]
-../90kVp_4.0mmAl.spc            # X-RAY ENERGY SPECTRUM FILE
+example/90kVp.spc            # X-RAY ENERGY SPECTRUM FILE
 25.6 -37.0  65.0                # SOURCE POSITION: X Y Z [cm]
  0.0   1.0   0.0                # SOURCE DIRECTION COSINES: U V W
 -15.0 -15.0                     # POLAR AND AZIMUTHAL APERTURES FOR THE FAN BEAM [degrees] (input negative to cover the whole detector)
@@ -52,7 +52,7 @@ mc-gpu_dose.dat                 # OUTPUT VOXEL DOSE FILE NAME
 1  243                          # VOXEL DOSE ROI: Z-index min max
  
 #[SECTION VOXELIZED GEOMETRY FILE v.2009-11-30]
-Zubal_voxel_man.vox.gz          # VOXEL GEOMETRY FILE (penEasy 2008 format; .gz accepted)
+example/gridtest.vox          # VOXEL GEOMETRY FILE (penEasy 2008 format; .gz accepted)
 
 #[SECTION MATERIAL FILE LIST v.2009-11-30]
 ../MC-GPU_material_files/air__5-120keV.mcgpu.gz                     #  1st MATERIAL FILE (.gz accepted)
