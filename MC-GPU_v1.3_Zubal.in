@@ -38,10 +38,10 @@ mc-gpu_image.dat                # OUTPUT IMAGE FILE NAME
 #[SECTION ANTI-SCATTER GRID v.2026-04-20]
 70.0                     # SOD (source-to-axis distance, cm) 
 45                     # dScatterGridPositionY (grid position relative to rotated point, cm)
-0.1                      # grid_height (cm)
+1.5                      # grid_height (cm)
 100.0                    # GridFocalLength (cm)
-15.0                     # grid_ratio (height / interspace thickness)
-30.0                    # griddensityperinch (lines per inch)
+1.5                     # grid_ratio (height / interspace thickness)
+1                    # griddensityperinch (lines per inch)
 #[SECTION CT SCAN TRAJECTORY v.2011-10-25]
 1                               # NUMBER OF PROJECTIONS (beam must be perpendicular to Z axis, set to 1 for a single projection)
 45.0                            # ANGLE BETWEEN PROJECTIONS [degrees] (360/num_projections for full CT)
