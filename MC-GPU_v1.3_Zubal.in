@@ -55,21 +55,17 @@ mc-gpu_dose.dat                 # OUTPUT VOXEL DOSE FILE NAME
 example/gridtest.vox          # VOXEL GEOMETRY FILE (penEasy 2008 format; .gz accepted)
 
 #[SECTION MATERIAL FILE LIST v.2009-11-30]
-../MC-GPU_material_files/air__5-120keV.mcgpu.gz                     #  1st MATERIAL FILE (.gz accepted)
-../MC-GPU_material_files/muscle_ICRP110__5-120keV.mcgpu.gz          #  2nd MATERIAL FILE
-../MC-GPU_material_files/soft_tissue_ICRP110__5-120keV.mcgpu.gz     #  3rd MATERIAL FILE
-../MC-GPU_material_files/bone_ICRP110__5-120keV.mcgpu.gz            #  4th MATERIAL FILE
-../MC-GPU_material_files/cartilage_ICRP110__5-120keV.mcgpu.gz       #  5th MATERIAL FILE
-../MC-GPU_material_files/adipose_ICRP110__5-120keV.mcgpu.gz         #  6th MATERIAL FILE
-../MC-GPU_material_files/blood_ICRP110__5-120keV.mcgpu.gz           #  7th MATERIAL FILE
-../MC-GPU_material_files/skin_ICRP110__5-120keV.mcgpu.gz            #  8th MATERIAL FILE
-../MC-GPU_material_files/lung_ICRP110__5-120keV.mcgpu.gz            #  9th MATERIAL FILE
-../MC-GPU_material_files/glands_others_ICRP110__5-120keV.mcgpu.gz   # 10th MATERIAL FILE
-../MC-GPU_material_files/brain_ICRP110__5-120keV.mcgpu.gz           # 11th MATERIAL FILE
-../MC-GPU_material_files/red_marrow_Woodard__5-120keV.mcgpu.gz      # 12th MATERIAL FILE
-../MC-GPU_material_files/liver_ICRP110__5-120keV.mcgpu.gz           # 13th MATERIAL FILE
-../MC-GPU_material_files/stomach_intestines_ICRP110__5-120keV.mcgpu.gz   #  14th MATERIAL FILE
-../MC-GPU_material_files/water__5-120keV.mcgpu.gz                   #  15th MATERIAL FILE
+material/air__5-120keV.mcgpu.gz                     #  1st MATERIAL FILE (.gz accepted)
+material/muscle__5-120keV.mcgpu.gz          #  2nd MATERIAL FILE
+material/adipose__5-120keV.mcgpu.gz     #  3rd MATERIAL FILE
+material/blood__5-120keV.mcgpu.gz            #  4th MATERIAL FILE
+material/CalciumOxalate__5-120keV.mcgpu.gz       #  5th MATERIAL FILE
+material/connective_Woodard__5-120keV.mcgpu.gz         #  6th MATERIAL FILE
+material/glandular__5-120keV.mcgpu.gz           #  7th MATERIAL FILE
+material/polystyrene__5-120keV.mcgpu.gz            #  8th MATERIAL FILE
+material/Se__5-120keV.mcgpu.gz            #  9th MATERIAL FILE
+material/skin__5-120keV.mcgpu.gz   # 10th MATERIAL FILE
+material/W__5-120keV.mcgpu.gz           # 11th MATERIAL FILE
 
 
 # >>>> END INPUT FILE >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
