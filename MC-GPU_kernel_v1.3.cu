@@ -172,6 +172,7 @@ __global__ void track_particles(int histories_per_thread,
 #ifdef USING_CUDA
   __shared__
 #endif 
+ struct ASG_struct ASG_data_SHARED;
   struct source_struct source_data_SHARED;    
 
     
@@ -444,6 +445,114 @@ void tally_voxel_energy_deposition(float* Edep, short3* voxel_coord, ulonglong2*
 
 
 ////////////////////////////////////////////////////////////////////////////////
+__device__ inline bool antiscatter_grid_transmission_coordinatebool(int rotation_flag, float *rot_inv, float3 *position, float3 *direction, float corner_min_rotated_to_Y, float Magnification, float leadStripThickness, float gridCycle, float dist_ASG_top, float dist_ASG_bottom, int xorz, float corner_min_rotated_to_Y_top)                 
+{
+  bool btransmission = false;
+  float PositionAtASG_top;
+  float PositionAtASG_bottom;
+
+  if (rotation_flag == 1)
+  {
+    PositionAtASG_top = rot_inv[0] * (position->x + dist_ASG_top * direction->x) + rot_inv[1] * (position->y + dist_ASG_top * direction->y) + rot_inv[2] * (position->z + dist_ASG_top * direction->z) - corner_min_rotated_to_Y_top;  
+    PositionAtASG_bottom = rot_inv[0] * (position->x + dist_ASG_bottom * direction->x) + rot_inv[1] * (position->y + dist_ASG_bottom * direction->y) + rot_inv[2] * (position->z + dist_ASG_bottom * direction->z) - corner_min_rotated_to_Y;
+  }
+  else
+  {
+    if (xorz == 1)
+    {
+      PositionAtASG_top = (position->x + dist_ASG_top * direction->x - corner_min_rotated_to_Y_top);
+      PositionAtASG_bottom = (position->x + dist_ASG_bottom * direction->x - corner_min_rotated_to_Y);
+    }
+
+  }
+
+  int pixel_coord_period_top = floor(PositionAtASG_top / (gridCycle * Magnification));
+  float pixel_coord_for_ID_top = ((PositionAtASG_top / (gridCycle * Magnification)) - pixel_coord_period_top) * (gridCycle * Magnification);
+  int pixel_coord_period_bottom = floor(PositionAtASG_bottom / (gridCycle));
+  float pixel_coord_for_ID_bottom = ((PositionAtASG_bottom / (gridCycle)) - pixel_coord_period_bottom) * (gridCycle);
+
+  int pixel_coord_tpo_ID = -1e9;
+  int pixel_coord_bottom_ID = -1e9;
+
+  if (pixel_coord_for_ID_top >= leadStripThickness * Magnification)
+  {
+    pixel_coord_tpo_ID = pixel_coord_period_top;
+    if (pixel_coord_for_ID_bottom >= leadStripThickness)
+    {
+      pixel_coord_bottom_ID = pixel_coord_period_bottom;
+      if (pixel_coord_tpo_ID == pixel_coord_bottom_ID && pixel_coord_tpo_ID > -1e9)
+      {
+        btransmission = true;
+      }
+    }
+  }
+
+  return btransmission;
+}
+
+
+__device__ inline float antiscatter_grid_transmission_bool(float3 *position, float3 *direction, struct detector_struct *detector_data_SHARED, struct ASG_struct *ASG_data_SHARED, struct source_struct *source_data_SHARED)       
+{
+  ASG_data_SHARED->grid_height = detector_data_SHARED->grid_height;
+  ASG_data_SHARED->GridFocalLength = detector_data_SHARED->GridFocalLength;
+  float ASGBottomtoDetector = detector_data_SHARED->sdd - detector_data_SHARED->sod - detector_data_SHARED->dScatterGridPositionY;
+
+  ASG_data_SHARED->center.y = detector_data_SHARED->center.y - ASGBottomtoDetector * source_data_SHARED->direction.y;
+  ASG_data_SHARED->center.x = detector_data_SHARED->center.x - ASGBottomtoDetector * source_data_SHARED->direction.x;
+  ASG_data_SHARED->center.z = detector_data_SHARED->center.z;
+  float dist_ASG_bottom;
+  float dist_ASG_top;
+
+  if (detector_data_SHARED->rotation_flag == 1)
+  {
+    register float cos_angle = direction->x * source_data_SHARED->direction.x +
+                              (direction->y * source_data_SHARED->direction.y +
+                              (direction->z * source_data_SHARED->direction.z));  
+          
+    if (cos_angle < 0.025f)
+    {
+      return false;
+    }
+
+    dist_ASG_bottom = (source_data_SHARED->direction.x * (ASG_data_SHARED->center.x - position->x) +
+                     (source_data_SHARED->direction.y * (ASG_data_SHARED->center.y - position->y) +
+                     (source_data_SHARED->direction.z * (ASG_data_SHARED->center.z - position->z)))) / cos_angle;
+
+    dist_ASG_top = (source_data_SHARED->direction.x * ((ASG_data_SHARED->center.x - ASG_data_SHARED->grid_height * source_data_SHARED->direction.x) - position->x) +
+                   (source_data_SHARED->direction.y * ((ASG_data_SHARED->center.y - ASG_data_SHARED->grid_height * source_data_SHARED->direction.y) - position->y) +
+                   (source_data_SHARED->direction.z * (ASG_data_SHARED->center.z - position->z)))) / cos_angle;
+  }
+  else
+  { 
+    dist_ASG_bottom = (ASG_data_SHARED->center.y - position->y) / (direction->y);
+    dist_ASG_top = (ASG_data_SHARED->center.y - ASG_data_SHARED->grid_height - position->y) / (direction->y);
+  }
+
+  ASG_data_SHARED->corner_min_rotated_to_Y.x = detector_data_SHARED->corner_min_rotated_to_Y.x + ASGBottomtoDetector / (ASGBottomtoDetector + ASG_data_SHARED->GridFocalLength) * 0.5 * detector_data_SHARED->width_X;
+  ASG_data_SHARED->corner_min_rotated_to_Y.z = detector_data_SHARED->corner_min_rotated_to_Y.z + ASGBottomtoDetector / (ASGBottomtoDetector + ASG_data_SHARED->GridFocalLength) * 0.5 * detector_data_SHARED->height_Z;
+
+  ASG_data_SHARED->Magnification = detector_data_SHARED->Magnification;
+  ASG_data_SHARED->leadStripThickness = detector_data_SHARED->leadStripThickness;
+  ASG_data_SHARED->gridCycle = detector_data_SHARED->gridCycle;
+  ASG_data_SHARED->rotation_flag = detector_data_SHARED->rotation_flag;
+
+  int xorz;
+  float rot_inv[3];
+  float corner_min_rotated_to_Y_top;
+  xorz = 1;
+  if (xorz == 1)
+  {
+    corner_min_rotated_to_Y_top = detector_data_SHARED->corner_min_rotated_to_Y.x + (ASGBottomtoDetector + ASG_data_SHARED->grid_height) / (ASGBottomtoDetector + ASG_data_SHARED->GridFocalLength) * 0.5 * detector_data_SHARED->width_X;
+    rot_inv[0] = detector_data_SHARED->rot_inv[0];
+    rot_inv[1] = detector_data_SHARED->rot_inv[1];
+    rot_inv[2] = detector_data_SHARED->rot_inv[2];
+  }
+  bool bASG_x = antiscatter_grid_transmission_coordinatebool(ASG_data_SHARED->rotation_flag, rot_inv, position, direction, ASG_data_SHARED->corner_min_rotated_to_Y.x, ASG_data_SHARED->Magnification, ASG_data_SHARED->leadStripThickness, ASG_data_SHARED->gridCycle, dist_ASG_top, dist_ASG_bottom, xorz, corner_min_rotated_to_Y_top);
+   return bASG_x ;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
 //!  Tally a radiographic projection image.
 //!  This function is called whenever a particle escapes the voxelized volume.
 //!  The code checks if the particle would arrive at the detector if it kept
@@ -543,26 +652,25 @@ inline void tally_image(float* energy, float3* position, float3* direction, sign
           //    The offset for the primaries or scatter images are calculated considering that:
           //      scatter_state=0 for non-scattered, =1 for Compton, =2 for Rayleigh, and =3 for multiple scatter.
           atomicAdd(( image +                                                               // Pointer to beginning of image array
-                    (int)(*scatter_state) * detector_data_SHARED->total_num_pixels +         // Offset to corresponding scatter image
-                    (pixel_coord_x + pixel_coord_z*(detector_data_SHARED->num_pixels.x)) ),  // Offset to the corresponding pixel
-                    __float2ull_rn((*energy)*SCALE_eV) );     // Energy arriving at the pixel, scaled by the factor SCALE_eV and rounded.
-                                                              // The maximum unsigned long long int value is ~1.8e19:
+        if (antiscatter_grid_transmission_bool(position, direction, detector_data_SHARED, ASG_data_SHARED, source_data_SHARED))
+        {
+          atomicAdd((image + (int)(*scatter_state) * detector_data_SHARED->total_num_pixels + (pixel_coord_x + pixel_coord_z * (detector_data_SHARED->num_pixels.x))), __float2ull_rn((*energy) * SCALE_eV));
         }
       }
-    #else
-      // CPU version (not using CUDA intrinsics: atomicAdd, fast type casting)
-      rotated_position = detector_data_SHARED->rot_inv[0]*position->x + detector_data_SHARED->rot_inv[1]*position->y + detector_data_SHARED->rot_inv[2]*position->z;  // X coordinate
-      
-      float pixel_coord_x = floor((rotated_position - detector_data_SHARED->corner_min_rotated_to_Y.x)*detector_data_SHARED->inv_pixel_size_X);   // Using float+floor instead of INT to avoid truncation errors for positive and negative values
-      if ( (pixel_coord_x>-0.1f) && (pixel_coord_x<(detector_data_SHARED->num_pixels.x-0.1f)) )    // Rejecting values negative or bigger than the image size
+    }
+#else
+    rotated_position = detector_data_SHARED->rot_inv[0] * position->x + detector_data_SHARED->rot_inv[1] * position->y + detector_data_SHARED->rot_inv[2] * position->z;
+    float pixel_coord_x = floor((rotated_position - detector_data_SHARED->corner_min_rotated_to_Y.x) * detector_data_SHARED->inv_pixel_size_X);
+    if ((pixel_coord_x > -0.1f) && (pixel_coord_x < (detector_data_SHARED->num_pixels.x - 0.1f)))
+    {
+      rotated_position = detector_data_SHARED->rot_inv[6] * position->x + detector_data_SHARED->rot_inv[7] * position->y + detector_data_SHARED->rot_inv[8] * position->z;
+      float pixel_coord_z = floor((rotated_position - detector_data_SHARED->corner_min_rotated_to_Y.z) * detector_data_SHARED->inv_pixel_size_Z);
+      if ((pixel_coord_z > -0.1f) && (pixel_coord_z < (detector_data_SHARED->num_pixels.y - 0.1f)))
       {
-        rotated_position = detector_data_SHARED->rot_inv[6]*position->x + detector_data_SHARED->rot_inv[7]*position->y + detector_data_SHARED->rot_inv[8]*position->z;  // Z coordinate
-        float pixel_coord_z = floor((rotated_position - detector_data_SHARED->corner_min_rotated_to_Y.z)*detector_data_SHARED->inv_pixel_size_Z);
-        if ( (pixel_coord_z>-0.1f) && (pixel_coord_z<(detector_data_SHARED->num_pixels.y-0.1f)) )
-          image[(int)(((float)*scatter_state)*detector_data_SHARED->total_num_pixels + pixel_coord_x + pixel_coord_z*detector_data_SHARED->num_pixels.x  +  0.0001f)]
-             += (unsigned long long int)((*energy)*SCALE_eV + 0.5f);   // Tally the particle energy in the pixel. This instruction is not thread-safe, but it is ok in sequential CPU code.          
+        image[(int)(((float)*scatter_state) * detector_data_SHARED->total_num_pixels + pixel_coord_x + pixel_coord_z * detector_data_SHARED->num_pixels.x + 0.0001f)] += (unsigned long long int)((*energy) * SCALE_eV + 0.5f);
       }
-    #endif
+    }
+#endif
   }
   else  // (detector_data_SHARED->rotation_flag != 1) -->  Initial source direction is (0,1,0): pixel number and distance can be found easily
   {  
@@ -581,10 +689,12 @@ inline void tally_image(float* energy, float3* position, float3* direction, sign
     {
       int pixel_coord_z = __float2int_rd((position->z + dist_detector*direction->z - detector_data_SHARED->corner_min_rotated_to_Y.z)*detector_data_SHARED->inv_pixel_size_Z);
       if ((pixel_coord_z>-1)&&(pixel_coord_z<detector_data_SHARED->num_pixels.y))
-        atomicAdd( ( image +                                                                // Pointer to beginning of image array
-                     (int)(*scatter_state) * detector_data_SHARED->total_num_pixels +         // Offset to corresponding scatter image
-                     (pixel_coord_x + pixel_coord_z*(detector_data_SHARED->num_pixels.x)) ),  // Offset to the corresponding pixel
-                   __float2ull_rn((*energy)*SCALE_eV) );    // Energy arriving at the pixel, scaled by the factor SCALE_eV and rounded.
+      {
+        if (antiscatter_grid_transmission_bool(position, direction, detector_data_SHARED, ASG_data_SHARED, source_data_SHARED))
+        {
+          atomicAdd((image + (int)(*scatter_state) * detector_data_SHARED->total_num_pixels + (pixel_coord_x + pixel_coord_z * (detector_data_SHARED->num_pixels.x))), __float2ull_rn((*energy) * SCALE_eV));
+        }
+      }
     }
     #else
 
