@@ -55,17 +55,17 @@ mc-gpu_dose.dat                 # OUTPUT VOXEL DOSE FILE NAME
 example/gridtest.vox          # VOXEL GEOMETRY FILE (penEasy 2008 format; .gz accepted)
 
 #[SECTION MATERIAL FILE LIST v.2009-11-30]
-material/air__5-120keV.mcgpu.gz                     #  1st MATERIAL FILE (.gz accepted)
-material/muscle__5-120keV.mcgpu.gz          #  2nd MATERIAL FILE
-material/adipose__5-120keV.mcgpu.gz     #  3rd MATERIAL FILE
-material/blood__5-120keV.mcgpu.gz            #  4th MATERIAL FILE
-material/CalciumOxalate__5-120keV.mcgpu.gz       #  5th MATERIAL FILE
-material/connective_Woodard__5-120keV.mcgpu.gz         #  6th MATERIAL FILE
-material/glandular__5-120keV.mcgpu.gz           #  7th MATERIAL FILE
-material/polystyrene__5-120keV.mcgpu.gz            #  8th MATERIAL FILE
-material/Se__5-120keV.mcgpu.gz            #  9th MATERIAL FILE
-material/skin__5-120keV.mcgpu.gz   # 10th MATERIAL FILE
-material/W__5-120keV.mcgpu.gz           # 11th MATERIAL FILE
+material/blood90_iodine10__5-120keV.mcgpu.gz                    #  1st MATERIAL FILE (.gz accepted)
+materials/steel__5-120keV.mcgpu.gz          #  2nd MATERIAL FILE
+materials/Titanium__5-120keV.mcgpu.gz    #  3rd MATERIAL FILE
+materials/Polystyrene__5-120keV.mcgpu.gz           #  4th MATERIAL FILE
+materials/Polyethylene__5-120keV.mcgpu.gz       #  5th MATERIAL FILE
+materials/Polycarbonate__5-120keV.mcgpu.gz        #  6th MATERIAL FILE
+materials/PVC__5-120keV.mcgpu.gz        #  7th MATERIAL FILE
+materials/Lead__5-120keV.mcgpu.gz           #  8th MATERIAL FILE
+materials/Gold__5-120keV.mcgpu.gz         #  9th MATERIAL FILE
+materials/Copper__5-120keV.mcgpu.gz  # 10th MATERIAL FILE
+materials/CesiumIodide__5-120keV.mcgpu.gz         # 11th MATERIAL FILE
 
 
 # >>>> END INPUT FILE >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
