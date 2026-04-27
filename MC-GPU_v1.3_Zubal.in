@@ -35,7 +35,13 @@ mc-gpu_image.dat                # OUTPUT IMAGE FILE NAME
 350    250                      # NUMBER OF PIXELS IN THE IMAGE: Nx Nz
  70.0   50.0                    # IMAGE SIZE (width, height): Dx Dz [cm]
  90.0                           # SOURCE-TO-DETECTOR DISTANCE (detector set in front of the source, perpendicular to the initial direction)
-
+#[SECTION ANTI-SCATTER GRID v.2026-04-20]
+75.0                     # SOD (source-to-axis distance, cm) 
+47.2                     # dScatterGridPositionY (grid position relative to rotated point, cm)
+0.1                      # grid_height (cm)
+110.0                    # GridFocalLength (cm)
+12.0                     # grid_ratio (height / interspace thickness)
+230.0                    # griddensityperinch (lines per inch)
 #[SECTION CT SCAN TRAJECTORY v.2011-10-25]
 3                               # NUMBER OF PROJECTIONS (beam must be perpendicular to Z axis, set to 1 for a single projection)
 45.0                            # ANGLE BETWEEN PROJECTIONS [degrees] (360/num_projections for full CT)

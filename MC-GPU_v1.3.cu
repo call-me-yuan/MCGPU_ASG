@@ -754,7 +754,7 @@ int main(int argc, char **argv)
         total_histories_speed_test = histories_speed_test;
       #endif
             
-      cudaThreadSynchronize();    // Force the runtime to wait until GPU kernel has completed
+      cudaDeviceSynchronize();    // Force the runtime to wait until GPU kernel has completed
       getLastCudaError("\n\n !!Kernel execution failed while simulating particle tracks!! ");   // Check if the CUDA function returned any error
 
       float speed_test_time = float(clock()-clock_kernel)/CLOCKS_PER_SEC;
@@ -891,7 +891,7 @@ int main(int argc, char **argv)
       }
     #endif
     
-    cudaThreadSynchronize();    // Force the runtime to wait until the GPU kernel is completed
+    cudaDeviceSynchronize();    // Force the runtime to wait until the GPU kernel is completed
     getLastCudaError("\n\n !!Kernel execution failed while simulating particle tracks!! ");  // Check if kernel execution generated any error
 
     float real_GPU_speed = total_histories_current_kernel_float/(float(clock()-clock_kernel)/CLOCKS_PER_SEC);  // GPU speed for all the image simulation, not just the speed test.
@@ -1052,7 +1052,7 @@ int main(int argc, char **argv)
       #ifdef USING_CUDA
         MASTER_THREAD printf("       ==> CUDA: Launching kernel to reset the device image to 0: number of blocks = %d, threads per block = 128\n", (int)(ceil(pixels_per_image/128.0f)+0.01f) );
         init_image_array_GPU<<<(int)(ceil(pixels_per_image/128.0f)+0.01f),128>>>(image_device, pixels_per_image);
-        cudaThreadSynchronize();
+        cudaDeviceSynchronize();
         getLastCudaError("\n\n !!Kernel execution failed initializing the image array!! ");  // Check if kernel execution generated any error:
       #else        
         memset(image, 0, image_bytes);     //   Init memory space to 0.  (see http://www.lainoox.com/c-memset-examples/)
@@ -1089,7 +1089,7 @@ int main(int argc, char **argv)
   cudaFree(mfp_table_a_device);
   cudaFree(mfp_table_b_device);
   cudaFree(voxels_Edep_device);
-  checkCudaErrors( cudaThreadExit() );
+  // checkCudaErrors( cudaThreadExit() );
 
   MASTER_THREAD printf("       ==> CUDA: Time freeing the device memory and ending the GPU threads: %.6f s\n", float(clock()-clock_kernel)/CLOCKS_PER_SEC);
 
@@ -1245,6 +1245,111 @@ int main(int argc, char **argv)
 ////////////////////////////////////////////////////////////////////////////////
 void read_input(int argc, char** argv, int myID, unsigned long long int* total_histories, int* seed_input, int* gpu_id, int* num_threads_per_block, int* histories_per_thread, struct detector_struct* detector_data, unsigned long long int** image_ptr, int* image_bytes, struct source_struct* source_data, struct source_energy_struct* source_energy_data, char* file_name_voxels, char file_name_materials[MAX_MATERIALS][250] , char* file_name_output, char* file_name_espc, int* num_projections, double* D_angle, double* angularROI_0, double* angularROI_1, double* initial_angle, ulonglong2** voxels_Edep_ptr, int* voxels_Edep_bytes, char* file_dose_output, short int* dose_ROI_x_min, short int* dose_ROI_x_max, short int* dose_ROI_y_min, short int* dose_ROI_y_max, short int* dose_ROI_z_min, short int* dose_ROI_z_max, double* SRotAxisD, double* vertical_translation_per_projection, int* flag_material_dose)
 {
+  // ========================================================================
+  //  Anti-scatter Grid parameters (read from input file SECTION)
+  // ========================================================================
+  // Initialize grid parameters to default values (grid disabled)
+  detector_data[0].sod = 0.0f;
+  detector_data[0].dScatterGridPositionY = 0.0f;
+  detector_data[0].grid_height = 0.0f;
+  detector_data[0].GridFocalLength = 0.0f;
+  detector_data[0].grid_ratio = 0.0f;
+  detector_data[0].griddensityperinch = 0.0f;
+  detector_data[0].Magnification = 0.0f;
+  detector_data[0].inchtocm = 2.54f;  // constant, always 2.54
+  detector_data[0].gridCycle = 0.0f;
+  detector_data[0].interspaceThickness = 0.0f;
+  detector_data[0].leadStripThickness = 0.0f;
+
+  // Try to read the anti-scatter grid section
+  // Save current file position to rewind if section not found
+  long pos_before_section = ftell(file_ptr);
+  
+  // Read a line and check if it's the grid section header
+  new_line_ptr = fgets(new_line, 250, file_ptr);
+  if (new_line_ptr != NULL && strstr(new_line, "SECTION ANTI-SCATTER GRID") != NULL)
+  {
+    // Found the section, now read the parameters
+    MASTER_THREAD printf("       Reading anti-scatter grid parameters...\n");
+    
+    // Read SOD (Source-to-Object distance, or source-to-axis distance)
+    new_line_ptr = fgets_trimmed(new_line, 250, file_ptr);
+    if (new_line_ptr != NULL)
+      sscanf(new_line, "%f", &detector_data[0].sod);
+    
+    // Read dScatterGridPositionY (grid position relative to rotated point)
+    new_line_ptr = fgets_trimmed(new_line, 250, file_ptr);
+    if (new_line_ptr != NULL)
+      sscanf(new_line, "%f", &detector_data[0].dScatterGridPositionY);
+    
+    // Read grid_height (cm)
+    new_line_ptr = fgets_trimmed(new_line, 250, file_ptr);
+    if (new_line_ptr != NULL)
+      sscanf(new_line, "%f", &detector_data[0].grid_height);
+    
+    // Read GridFocalLength (cm)
+    new_line_ptr = fgets_trimmed(new_line, 250, file_ptr);
+    if (new_line_ptr != NULL)
+      sscanf(new_line, "%f", &detector_data[0].GridFocalLength);
+    
+    // Read grid_ratio (grid height / interspace thickness)
+    new_line_ptr = fgets_trimmed(new_line, 250, file_ptr);
+    if (new_line_ptr != NULL)
+      sscanf(new_line, "%f", &detector_data[0].grid_ratio);
+    
+    // Read griddensityperinch (lines per inch)
+    new_line_ptr = fgets_trimmed(new_line, 250, file_ptr);
+    if (new_line_ptr != NULL)
+      sscanf(new_line, "%f", &detector_data[0].griddensityperinch);
+    
+    // Compute derived parameters (same as original hardcoded calculations)
+    if (detector_data[0].GridFocalLength > 0.0f)
+    {
+      detector_data[0].Magnification = (detector_data[0].GridFocalLength - detector_data[0].grid_height) / detector_data[0].GridFocalLength;
+    }
+    else
+    {
+      detector_data[0].Magnification = 1.0f;
+    }
+    
+    detector_data[0].inchtocm = 2.54f;
+    
+    if (detector_data[0].griddensityperinch > 0.0f)
+    {
+      detector_data[0].gridCycle = detector_data[0].inchtocm / detector_data[0].griddensityperinch;
+    }
+    else
+    {
+      detector_data[0].gridCycle = 0.0f;
+    }
+    
+    if (detector_data[0].grid_ratio > 0.0f)
+    {
+      detector_data[0].interspaceThickness = detector_data[0].grid_height / detector_data[0].grid_ratio;
+    }
+    else
+    {
+      detector_data[0].interspaceThickness = 0.0f;
+    }
+    
+    detector_data[0].leadStripThickness = detector_data[0].gridCycle - detector_data[0].interspaceThickness;
+    
+    MASTER_THREAD printf("         Anti-scatter grid: SOD=%.2f cm, PositionY=%.2f cm, Height=%.4f cm\n",
+                         detector_data[0].sod, detector_data[0].dScatterGridPositionY, detector_data[0].grid_height);
+    MASTER_THREAD printf("         Grid: FocalLength=%.2f cm, Ratio=%.1f, Density=%.1f lines/inch\n",
+                         detector_data[0].GridFocalLength, detector_data[0].grid_ratio, detector_data[0].griddensityperinch);
+    MASTER_THREAD printf("         Derived: Mag=%.4f, Cycle=%.4f cm, Interspace=%.4f cm, Lead=%.4f cm\n",
+                         detector_data[0].Magnification, detector_data[0].gridCycle, 
+                         detector_data[0].interspaceThickness, detector_data[0].leadStripThickness);
+  }
+  else
+  {
+    // Section not found: no grid will be used
+    // Rewind file pointer to before we read the line
+    fseek(file_ptr, pos_before_section, SEEK_SET);
+    MASTER_THREAD printf("       No [SECTION ANTI-SCATTER GRID] found. Grid simulation disabled.\n");
+  }
+  // ========================================================================
   FILE* file_ptr = NULL;
   char new_line[250];
   char *new_line_ptr = NULL;
@@ -2629,7 +2734,7 @@ void init_CUDA_device( int* gpu_id, int myID, int numprocs,
   MASTER_THREAD printf("       ==> CUDA: Launching kernel to initialize the device image to 0: number of blocks = %d, threads per block = 128\n", (int)(ceil(pixels_per_image/128.0f)+0.01f) );
 
   init_image_array_GPU<<<(int)(ceil(pixels_per_image/128.0f)+0.01f),128>>>(*image_device, pixels_per_image);
-    cudaThreadSynchronize();      // Force the runtime to wait until all device tasks have completed
+    cudaDeviceSynchronize();      // Force the runtime to wait until all device tasks have completed
     getLastCudaError("\n\n !!Kernel execution failed initializing the image array!! ");  // Check if kernel execution generated any error:
 
 
@@ -2652,7 +2757,7 @@ void init_CUDA_device( int* gpu_id, int myID, int numprocs,
     while (num_blocks > 65500);    
     MASTER_THREAD printf("       ==> CUDA: Launching kernel to initialize the device dose deposition to 0: number of blocks = %d, threads per block = %d\n", num_blocks, num_threads_block);  
     init_dose_array_GPU<<<num_blocks,num_threads_block>>>(*voxels_Edep_device, num_voxels_dose);    
-      cudaThreadSynchronize();
+      cudaDeviceSynchronize();
       getLastCudaError("\n\n !!Kernel execution failed initializing the dose array!! ");  // Check if kernel execution generated any error:
 */
 
@@ -3278,6 +3383,24 @@ void set_CT_trajectory(int myID, int num_projections, double D_angle, double ang
     detector_data[i].num_pixels = detector_data[0].num_pixels;
     detector_data[i].total_num_pixels = detector_data[0].total_num_pixels;
     detector_data[i].rotation_flag = detector_data[0].rotation_flag;
+
+
+  detector_data[i].dScatterGridPositionY = detector_data[0].dScatterGridPositionY;//cm relative to rotated point, not system original point
+  detector_data[i].grid_height = detector_data[0].grid_height ;//cm
+  detector_data[i].GridFocalLength = detector_data[0].GridFocalLength;//cm
+  detector_data[i].grid_ratio = detector_data[0].grid_ratio;//
+  detector_data[i].griddensityperinch =  detector_data[0].griddensityperinch;//230
+
+
+  detector_data[i].Magnification = detector_data[0].Magnification ;//
+  detector_data[i].inchtocm =  detector_data[0].inchtocm ;//
+  detector_data[i].gridCycle = detector_data[0].gridCycle;//
+  detector_data[i].interspaceThickness = detector_data[0].interspaceThickness  ;//
+	//  detector_data[0].interspaceThickness = gridCycle * 0.5;//
+  detector_data[i].leadStripThickness =  detector_data[0].leadStripThickness;//
+   detector_data[i].sod =  detector_data[0].sod ;
+
+
         
         
     // --Set the new source location and direction, for the current CT projection:

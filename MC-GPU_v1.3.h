@@ -199,12 +199,52 @@ detector_struct         // Define a 2D detector plane, located in front of the d
         height_Z,
         inv_pixel_size_X,
         inv_pixel_size_Z;
+  float      dScatterGridPositionY ,
+        grid_height ,//lp/cm
+        GridFocalLength ,//cm
+        Magnification ,
+        grid_ratio ,
+        griddensityperinch ,//lp/cm
+        inchtocm ,//cm
+        gridCycle ,
+        interspaceThickness,
+        leadStripThickness,
+        sod;
   int2 num_pixels;
   int total_num_pixels,
       rotation_flag;    // Flag >0 if the initial source direction is not (0,1,0); ==0 otherwise (ie, detector perpendicular to +Y axis and rotation not required).
 };
 
+struct
+#ifdef USING_CUDA
+  __align__(16)
+#endif
+ASG_struct         // Define a 2D detector plane, located in front of the defined source (centered at the focal spot and perpendicular to the initial direction).
+{                       // The radiograohic image will be stored in the global variable "unsigned long long int *image".
+  float sdd;                                // Store the source-detector distance
+  float3 corner_min_rotated_to_Y,
+         center;
+  float rot_inv[9],    // Rotation to transport a particle on the detector plane to a frame where the detector is perpendicular to +Y.
+        width_X,
+        height_Z,
+        inv_pixel_size_X,
+        inv_pixel_size_Z;
+  float      dScatterGridPositionY ,
+        grid_height ,//lp/cm
+        GridFocalLength ,//cm
+        Magnification ,
+        grid_ratio ,
+        griddensityperinch ,//lp/cm
+        inchtocm ,//cm
+        gridCycle ,
+        interspaceThickness,
+        leadStripThickness;
+ 
+  int2 num_pixels;
+  int total_num_pixels,
+      rotation_flag;    // Flag >0 if the initial source direction is not (0,1,0); ==0 otherwise (ie, detector perpendicular to +Y axis and rotation not required).
 
+};
 //! Structure defining a voxelized box with the back-lower corner at the coordinate origin.
 struct
 #ifdef USING_CUDA
